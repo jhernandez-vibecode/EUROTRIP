@@ -100,97 +100,68 @@
       const [isRefreshingAlerts, setIsRefreshingAlerts] = useState(false);
       const [lastUpdated, setLastUpdated] = useState("Actualizado recientemente");
 
-      // --- FUNCIÓN PARA LLAMAR A GEMINI ---
-      const callGemini = async (prompt, type) => {
+      // --- FUNCIÓN SIMULADA PARA IA (SIN API KEY) ---
+      const callGemini = (prompt, type, contextInfo = "") => {
         setAiLoading(true);
         setAiResponse(null);
         setShowAiModal(true);
         setAiPromptType(type);
 
-        try {
-          // NOTA PARA NETLIFY: Pega tu API Key real entre las comillas abajo.
-          const apiKey = "AIzaSyB07XophMTxc2_JA-NGQah5vExJ1MjsZ-c"; 
-
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        // Simulamos el tiempo de espera de la IA (1.5 segundos)
+        setTimeout(() => {
+          let responseText = "";
+          
+          if (type === 'packing') {
+            responseText = "🎒 **Lista de Equipaje Sugerida (Primavera en Europa):**\n\n• **Ropa:** Capas ligeras (el clima varía), suéter o chaqueta para la noche, bufanda, y un abrigo resistente a la lluvia/viento.\n• **Calzado:** 2 pares de tenis/zapatos sumamente cómodos para caminar (crucial para Roma y París).\n• **Documentos:** Pasaporte, seguro de viaje, tarjetas de crédito (Apple Pay/Google Pay funcionan en casi todos lados).\n• **Electrónicos:** Adaptador de corriente europeo (Enchufe redondo), batería portátil (Powerbank) para el celular.\n• **Varios:** Botella de agua reutilizable, paraguas pequeño y bolso cruzado seguro.";
+          } else if (type === 'food') {
+            const city = contextInfo.toLowerCase();
+            if (city.includes("roma") || city.includes("nápoles")) {
+              responseText = "🍝 **Comida en Italia:**\n\n1. **Pizza Margherita:** En Nápoles es obligatoria. Masa fina y bordes inflados.\n2. **Pasta Carbonara / Cacio e Pepe:** Clásicos romanos que debes probar en Trastevere.\n3. **Gelato:** Un auténtico helado artesanal italiano de postre cada día.";
+            } else if (city.includes("parís")) {
+              responseText = "🥐 **Comida en París:**\n\n1. **Croissant y Pain au Chocolat:** El mejor desayuno en cualquier 'Boulangerie' local de esquina.\n2. **Crêpes (Dulces o Salados):** Ideales para comer mientras caminas cerca del Barrio Latino.\n3. **Sopa de Cebolla o Escargots:** Para una cena clásica parisina.";
+            } else if (city.includes("bélgica") || city.includes("brujas")) {
+              responseText = "🍫 **Comida en Bélgica:**\n\n1. **Gofres (Waffles):** Cómpralos en puestos callejeros, calientes y con chocolate derretido.\n2. **Papas Fritas (Frites):** Las inventaron aquí. Cómpralas en un 'Fritkot' con salsa andalouse.\n3. **Cerveza Local y Chocolate:** Los mejores del mundo, parada obligatoria en Grand Place.";
+            } else {
+              responseText = "🍽️ **Tip Gastronómico:**\n\n¡Busca siempre dónde comen los locales! Aléjate un par de calles de las atracciones turísticas principales (como la Torre Eiffel o el Coliseo) y encontrarás mejor sabor y precios más bajos.";
             }
-          );
-          
-          const data = await response.json();
-          if (data.error) throw new Error(data.error.message);
-          
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No pude generar una respuesta.";
-          setAiResponse(text);
-        } catch (error) {
-          console.error("Error AI:", error);
-          setAiResponse("Hubo un problema conectando con la IA. Asegúrate de haber puesto tu API Key si estás en Netlify.");
-        } finally {
-          setAiLoading(false);
-        }
-      };
-
-      // --- FUNCIÓN PARA ACTUALIZAR ALERTAS ---
-      const refreshAlerts = async () => {
-        setIsRefreshingAlerts(true);
-        try {
-          // NOTA PARA NETLIFY: Pega tu API Key real entre las comillas abajo.
-          const apiKey = "AIzaSyB07XophMTxc2_JA-NGQah5vExJ1MjsZ-c"; 
-
-          const prompt = `Actúa como analista de seguridad internacional. Evalúa el riesgo de viaje actual para turistas en Francia, Italia y Bélgica debido a conflictos geopolíticos recientes en Medio Oriente. Devuelve la respuesta en formato JSON estrictamente con la siguiente estructura (un array de 3 objetos): [{"country": "Francia", "status": "AMARILLO", "description": "Explicación..."}]`;
-
-          const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          } else if (type === 'lang') {
+            const city = contextInfo.toLowerCase();
+            if (city.includes("roma") || city.includes("nápoles")) {
+              responseText = "🇮🇹 **Frases en Italiano:**\n\n• Hola / Adiós: *Ciao*\n• Buenos días: *Buongiorno*\n• Por favor: *Per favore*\n• Gracias: *Grazie*\n• La cuenta, por favor: *Il conto, per favore*";
+            } else if (city.includes("parís")) {
+              responseText = "🇫🇷 **Frases en Francés:**\n\n• Hola (Día): *Bonjour*\n• Hola (Noche): *Bonsoir*\n• Por favor: *S'il vous plaît*\n• Gracias: *Merci*\n• ¿Habla inglés/español?: *Parlez-vous anglais/espagnol?*";
+            } else {
+               responseText = "🗣️ **Tip de Idioma:**\n\nUn simple 'Buenos días' en el idioma local antes de cambiar al inglés hace una gran diferencia en la actitud de las personas en las tiendas y restaurantes.";
             }
-          );
-          
-          const data = await response.json();
-          if (data.error) throw new Error(data.error.message);
-          
-          let jsonString = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (jsonString) {
-            const match = jsonString.match(/\[[\s\S]*\]/);
-            if (match) {
-              const cleanJsonString = match[0];
-              const newAlerts = JSON.parse(cleanJsonString);
-              setAlerts(newAlerts);
-              const now = new Date();
-              setLastUpdated(`Actualizado: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`);
-            } else { throw new Error("JSON inválido"); }
+          } else if (type === 'hidden') {
+            responseText = "💎 **Joya Oculta:**\n\nMientras recorres esta zona, presta atención a las calles laterales. A menudo, las iglesias más pequeñas (cuya entrada es gratuita) esconden obras de arte impresionantes sin las grandes filas de los museos famosos. ¡Déjate perder un poco!";
           }
-        } catch (error) {
-          console.error("Error AI Alertas:", error);
-          alert("Hubo un problema actualizando las alertas en tiempo real. Mostrando la última información almacenada.");
-        } finally {
-          setIsRefreshingAlerts(false);
-        }
+          
+          setAiResponse(responseText);
+          setAiLoading(false);
+        }, 1500);
       };
 
-      // --- GENERADORES DE PROMPTS ---
+      // --- FUNCIÓN SIMULADA PARA ACTUALIZAR ALERTAS ---
+      const refreshAlerts = () => {
+        setIsRefreshingAlerts(true);
+        
+        // Simulamos la consulta al servidor (1.5 segundos)
+        setTimeout(() => {
+          // Actualizamos la hora para confirmar que la acción funcionó
+          setLastUpdated(`Actualizado: ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`);
+          setIsRefreshingAlerts(false);
+        }, 1500);
+      };
+
+      // --- GENERADORES DE ACCIONES ---
       const handlePackingList = () => {
-        const cities = itinerary.map(i => i.city).join(", ");
-        const prompt = `Actúa como un experto asesor de viajes. Viajo a Europa (${cities}) del 26 Marzo al 06 Abril (Primavera). Genera una lista de equipaje esencial. Formato: Ropa, Calzado, Documentos, Electrónicos, Varios.`;
-        callGemini(prompt, 'packing');
+        callGemini("Genera lista...", 'packing');
       };
 
       const handleCityTip = (item, tipType) => {
         setActiveCityContext(item.city);
-        let prompt = "";
-        const context = `para un turista visitando ${item.city}, ${item.country} en fecha ${item.date}.`;
-        switch (tipType) {
-          case 'food': prompt = `Guía gastronómico: Dame 3 recomendaciones imperdibles de comida típica ${context}.`; break;
-          case 'lang': prompt = `Profesor de idiomas: Dame 5 frases esenciales y pronunciación en el idioma local ${context}.`; break;
-          case 'hidden': prompt = `Local conocedor: Recomienda 1 "joya oculta" poco turística pero increíble ${context}.`; break;
-          default: prompt = `Dame un consejo de viaje breve ${context}`;
-        }
-        callGemini(prompt, tipType);
+        callGemini("Genera tip...", tipType, item.city);
       };
 
       // --- DATOS DEL ITINERARIO ---
@@ -289,7 +260,6 @@
         { label: "Bélgica", count: itinerary.filter(i => i.country === 'Bélgica').length, color: "bg-amber-500" },
       ];
 
-      // ---> SOLUCIÓN A LA PANTALLA BLANCA: TODO DENTRO DE UN DIV PADRE <---
       return (
         <div className="min-h-screen bg-gray-50 font-sans text-gray-800 p-4 md:p-8 relative print:bg-white print:p-0">
           <div className="max-w-4xl mx-auto">
@@ -404,6 +374,7 @@
                                     <div className="text-xs text-gray-400 px-2 py-1 font-semibold">PREGUNTAR A GEMINI ✨</div>
                                     <button onClick={(e)=>{e.stopPropagation(); handleCityTip(item, 'food')}} className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 flex gap-2 items-center"><Utensils className="text-orange-500"/> Qué comer</button>
                                     <button onClick={(e)=>{e.stopPropagation(); handleCityTip(item, 'lang')}} className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 flex gap-2 items-center"><Languages className="text-blue-500"/> Frases útiles</button>
+                                    <button onClick={(e)=>{e.stopPropagation(); handleCityTip(item, 'hidden')}} className="w-full text-left px-2 py-1.5 text-sm hover:bg-gray-50 flex gap-2 items-center"><Gem className="text-pink-500"/> Joya oculta</button>
                                  </div>
                                </div>
                               <button onClick={(e) => startEditing(e, item)} className="text-gray-400 hover:text-blue-500 p-1"><Edit2 /></button>
