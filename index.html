@@ -71,7 +71,7 @@
     const Copy = (p) => <SvgIcon d='<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>' {...p} />;
     const ShieldAlert = (p) => <SvgIcon d='<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/>' {...p} />;
     const RefreshCw = (p) => <SvgIcon d='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' {...p} />;
-
+    const Calculator = (p) => <SvgIcon d='<rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>' {...p} />;
 
     // 2. APLICACIÓN PRINCIPAL
     const App = () => {
@@ -82,6 +82,11 @@
       const [aiPromptType, setAiPromptType] = useState('');
       const [activeCityContext, setActiveCityContext] = useState(null);
       
+      // --- ESTADOS PARA CONVERSOR DE MONEDAS ---
+      const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+      const [euroAmount, setEuroAmount] = useState(10);
+      const rates = { CRC: 560, USD: 1.10 }; // Tasas aproximadas referenciales
+
       // --- ESTADO COMPARTIR ---
       const [copied, setCopied] = useState(false);
 
@@ -320,6 +325,9 @@
               
               {/* BOTONES ACCIÓN */}
               <div className="flex flex-wrap gap-2 no-print w-full md:w-auto">
+                <button onClick={() => setShowCurrencyModal(true)} className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md transition-colors">
+                  <Calculator /> <span className="md:inline">Divisas</span>
+                </button>
                 <button onClick={handlePackingList} className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 text-white px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md">
                   <Luggage /> <span className="md:inline">Maleta IA</span>
                 </button>
@@ -450,6 +458,58 @@
                      )}
                   </div>
                   {!aiLoading && (<div className="p-4 border-t bg-gray-50 flex justify-end"><button onClick={()=>setShowAiModal(false)} className="bg-gray-800 text-white px-5 py-2 rounded-lg text-sm font-medium">Cerrar</button></div>)}
+               </div>
+            </div>
+          )}
+
+          {/* MODAL DEL CONVERSOR DE MONEDAS */}
+          {showCurrencyModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 no-print backdrop-blur-sm">
+               <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+                  <div className="bg-blue-600 p-4 text-white flex justify-between items-center">
+                     <h3 className="font-bold flex items-center gap-2"><Calculator /> Conversor Rápido</h3>
+                     <button onClick={()=>setShowCurrencyModal(false)} className="p-1 hover:bg-white/20 rounded-full"><X/></button>
+                  </div>
+                  <div className="p-6">
+                    <p className="text-sm text-gray-500 mb-4 text-center">Ingresa el precio en Euros (€) para ver su equivalente aproximado.</p>
+                    
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="relative w-full">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <span className="text-gray-500 font-bold text-lg">€</span>
+                        </div>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={euroAmount} 
+                          onChange={(e) => setEuroAmount(e.target.value)} 
+                          className="w-full pl-10 pr-4 py-3 border-2 border-blue-200 rounded-xl text-xl font-bold text-gray-800 focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🇨🇷</span>
+                          <span className="font-semibold text-gray-700">Colones</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">
+                          ₡ {((euroAmount || 0) * rates.CRC).toLocaleString('es-CR', { maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🇺🇸</span>
+                          <span className="font-semibold text-gray-700">Dólares</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">
+                          $ {((euroAmount || 0) * rates.USD).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                </div>
             </div>
           )}
