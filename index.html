@@ -87,7 +87,19 @@
 
     // 2. APLICACIÓN PRINCIPAL
     const App = () => {
-      // --- ESTADOS PARA IA ---
+      // --- ESTADOS PARA RELOJES EN TIEMPO REAL ---
+      const [currentTime, setCurrentTime] = useState(new Date());
+
+      useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      // Usamos Europe/Paris ya que Francia, Italia y Bélgica comparten la misma zona horaria (CET/CEST)
+      const euTime = currentTime.toLocaleTimeString('es-CR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' });
+      const crTime = currentTime.toLocaleTimeString('es-CR', { timeZone: 'America/Costa_Rica', hour: '2-digit', minute: '2-digit' });
+
+      // --- ESTADOS PARA IA (Tips) ---
       const [showAiModal, setShowAiModal] = useState(false);
       const [aiLoading, setAiLoading] = useState(false);
       const [aiResponse, setAiResponse] = useState(null);
@@ -97,10 +109,10 @@
       // --- ESTADOS PARA CONVERSOR DE MONEDAS ---
       const [showCurrencyModal, setShowCurrencyModal] = useState(false);
       const [euroAmount, setEuroAmount] = useState(10);
-      const rates = { CRC: 560, USD: 1.10 };
+      const rates = { CRC: 560, USD: 1.10 }; // Tasas aproximadas referenciales
 
-      // --- ESTADO COMPARTIR ---
-      const [copied, setCopied] = useState(false);
+      // --- ESTADO DÍAS COMPLETADOS ---
+      // Inicializamos desde localStorage si existe, o un array vacío
 
       // --- ESTADO DÍAS COMPLETADOS (Guardado en memoria) ---
       const [completedDays, setCompletedDays] = useState(() => {
@@ -238,39 +250,6 @@
       const cancelEdit = (e) => { e.stopPropagation(); setEditingId(null); setEditForm({}); };
       const handleChange = (field, value) => { setEditForm(prev => ({ ...prev, [field]: value })); };
 
-      const handlePrint = () => {
-        try { window.print(); } 
-        catch (e) { alert("Usa el menú de tu navegador para imprimir o guardar como PDF."); }
-      };
-
-      const handleWhatsAppCopy = () => {
-        let text = "*✈️ EUROTRIP 2026 - ITINERARIO FINAL* 🇪🇺\n\n";
-        itinerary.forEach(item => {
-          const isDone = completedDays.includes(item.id) ? "✅ " : "";
-          text += `*${isDone}🗓 ${item.day} ${item.date}* | ${item.country}\n`;
-          text += `📍 *${item.city}*\n📝 _${item.title}_\nℹ️ ${item.details}\n`;
-          if (item.hotel) text += `🛏️ Hotel: ${item.hotel}\n`;
-          text += `-------------------\n`;
-        });
-        
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed"; 
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.focus(); 
-        textArea.select();
-        
-        try {
-          document.execCommand('copy');
-          setCopied(true); 
-          setTimeout(() => setCopied(false), 3000);
-        } catch (err) {
-          alert("No se pudo copiar automáticamente. Por favor selecciona el texto manualmente.");
-        }
-        document.body.removeChild(textArea);
-      };
-
       const stats = [
         { label: "Francia", count: itinerary.filter(i => i.country === 'Francia').length, color: "bg-blue-500" },
         { label: "Italia", count: itinerary.filter(i => i.country === 'Italia').length, color: "bg-orange-500" },
@@ -298,25 +277,29 @@
                 {/* Progreso del viaje */}
                 <div className="mt-4 flex items-center gap-2 text-xs font-medium text-gray-500 print:hidden">
                     <div className="w-full bg-gray-200 rounded-full h-2.5 max-w-[200px]">
-                      <div className="bg-green-500 h-2.5 rounded-full transition-all duration-500" style={{ width: `${(completedDays.length / itinerary.length) * 100}%` }}></div>
+                      <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${(completedDays.length / itinerary.length) * 100}%` }}></div>
                     </div>
                     <span>{completedDays.length} de {itinerary.length} días</span>
                 </div>
               </div>
               
-              {/* BOTONES ACCIÓN */}
-              <div className="flex flex-wrap gap-2 no-print w-full md:w-auto">
-                <button onClick={() => setShowCurrencyModal(true)} className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md transition-colors">
-                  <Calculator className="w-4 h-4" /> <span className="md:inline">Divisas</span>
-                </button>
-                <button onClick={handlePackingList} className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 text-white px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md">
-                  <Luggage className="w-4 h-4" /> <span className="md:inline">Maleta IA</span>
-                </button>
-                <button onClick={handleWhatsAppCopy} className={`flex-1 md:flex-none justify-center flex items-center gap-2 px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md text-white transition-colors ${copied ? 'bg-green-600' : 'bg-green-500 hover:bg-green-600'}`}>
-                  {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />} <span>{copied ? 'Copiado!' : 'WhatsApp'}</span>
-                </button>
-                <button onClick={handlePrint} className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-3 md:py-2 rounded-xl text-sm font-medium shadow-md">
-                  <Printer className="w-4 h-4" /> <span className="hidden md:inline">PDF</span>
+              {/* BOTONES ACCIÓN Y RELOJES */}
+              <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 no-print w-full md:w-auto mt-4 md:mt-0">
+                {/* Relojes en tiempo real */}
+                <div className="flex items-center gap-4 bg-white px-5 py-2.5 rounded-xl border border-gray-200 shadow-sm w-full sm:w-auto justify-center">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🇪🇺 Europa</span>
+                    <span className="text-xl font-black text-blue-900 tabular-nums leading-none mt-1">{euTime}</span>
+                  </div>
+                  <div className="w-px h-8 bg-gray-300"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">🇨🇷 Costa Rica</span>
+                    <span className="text-xl font-black text-blue-900 tabular-nums leading-none mt-1">{crTime}</span>
+                  </div>
+                </div>
+
+                <button onClick={() => setShowCurrencyModal(true)} className="flex-1 sm:flex-none w-full sm:w-auto justify-center flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 sm:py-3 rounded-xl text-sm font-medium shadow-md transition-colors">
+                  <Calculator className="w-5 h-5" /> <span>Divisas</span>
                 </button>
               </div>
             </div>
@@ -450,7 +433,7 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 no-print backdrop-blur-sm">
                <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
                   <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 text-white flex justify-between items-center">
-                     <h3 className="font-bold flex items-center gap-2"><Sparkles className="w-5 h-5"/> {aiPromptType === 'packing' ? 'Maleta Inteligente' : 'Tips de Viaje'}</h3>
+                     <h3 className="font-bold flex items-center gap-2"><Sparkles className="w-5 h-5"/> Tips de Viaje</h3>
                      <button onClick={()=>setShowAiModal(false)} className="p-1 hover:bg-white/20 rounded-full"><X className="w-5 h-5"/></button>
                   </div>
                   <div className="p-6 h-64 overflow-y-auto custom-scrollbar text-sm text-gray-700">
